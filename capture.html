@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=360, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>검색</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="capture.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-top">
+                <a href="main.html" class="back-button">
+                    <span class="arrow">←</span>
+                    <span class="back-text">뒤로가기</span>
+                </a>
+                <div class="app-title">
+                    <span class="app-title-text"><span class="app-title-med">약</span><span class="app-title-rest">을먹자</span></span>
+                    <img src="pill.png" class="pill-icon" alt="알약">
+                </div>
+            </div>
+            <h1 class="main-title">검색</h1>
+        </header>
+
+        <!-- Main Content Section -->
+        <main class="main-content">
+            <p class="instruction-text">약 봉투를 네모 안에 맞춰주세요.</p>
+            
+            <!-- Camera Area -->
+            <div class="camera-container" id="cameraContainer">
+                <video id="videoElement" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+                <canvas id="canvasElement" style="display: none;"></canvas>
+                <div class="camera-placeholder" id="cameraPlaceholder">
+                    <p>카메라 영역</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Capture Button -->
+        <button class="capture-button" id="captureButton">
+            <img src="captureicon.png" alt="촬영" class="capture-icon">
+        </button>
+    </div>
+
+    <script>
+        let stream = null;
+        let capturedImageUri = null;
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasElement');
+        const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const captureButton = document.getElementById('captureButton');
+
+        // 카메라 시작
+        async function startCamera() {
+            try {
+                // 카메라 권한 요청
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment', // 후면 카메라 우선
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+
+                // 비디오 요소에 스트림 연결
+                videoElement.srcObject = stream;
+                videoElement.style.display = 'block';
+                cameraPlaceholder.style.display = 'none';
+                
+                // Canvas 크기 설정
+                videoElement.addEventListener('loadedmetadata', () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                });
+            } catch (error) {
+                console.error('카메라 접근 오류:', error);
+                cameraPlaceholder.innerHTML = '<p style="color: red;">카메라 권한이 필요합니다.<br>브라우저 설정에서 카메라 권한을 허용해주세요.</p>';
+                
+                if (error.name === 'NotAllowedError') {
+                    alert('카메라 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.');
+                } else if (error.name === 'NotFoundError') {
+                    alert('카메라를 찾을 수 없습니다.');
+                } else {
+                    alert('카메라 접근 중 오류가 발생했습니다: ' + error.message);
+                }
+            }
+        }
+
+        // 사진 촬영
+        function capturePhoto() {
+            if (!stream || !videoElement.videoWidth) {
+                alert('카메라가 준비되지 않았습니다.');
+                return;
+            }
+
+            try {
+                const context = canvasElement.getContext('2d');
+                
+                // Canvas에 현재 비디오 프레임 그리기
+                context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                
+                // Canvas를 이미지로 변환
+                capturedImageUri = canvasElement.toDataURL('image/jpeg', 0.8);
+                
+                // 촬영된 이미지 URI를 콘솔에 출력 (추후 업로드/처리용)
+                console.log('Captured Image URI:', capturedImageUri);
+                
+                // 비디오 숨기고 이미지 표시
+                videoElement.style.display = 'none';
+                cameraPlaceholder.style.display = 'flex';
+                cameraPlaceholder.innerHTML = `
+                    <div style="text-align: center;">
+                        <p style="margin-bottom: 10px; font-weight: bold;">촬영 완료!</p>
+                        <img src="${capturedImageUri}" style="max-width: 100%; max-height: 300px; border-radius: 8px;" alt="촬영된 이미지">
+                    </div>
+                `;
+                
+                // 스트림 정지
+                stopCamera();
+                
+                alert('사진이 촬영되었습니다.');
+            } catch (error) {
+                console.error('사진 촬영 오류:', error);
+                alert('사진 촬영 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 카메라 정지
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        // 촬영 버튼 클릭 이벤트
+        captureButton.addEventListener('click', () => {
+            if (capturedImageUri) {
+                // 다시 촬영
+                capturedImageUri = null;
+                cameraPlaceholder.innerHTML = '<p>카메라 영역</p>';
+                startCamera();
+            } else {
+                capturePhoto();
+            }
+        });
+
+        // 페이지 로드 시 카메라 시작
+        window.addEventListener('load', () => {
+            startCamera();
+        });
+
+        // 페이지 언로드 시 카메라 정지
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+        });
+    </script>
+</body>
+</html>
+
