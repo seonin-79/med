@@ -68,12 +68,7 @@
                 }, 300);
             }
 
-            // 토큰이 있으면 자동으로 main.html로 리다이렉트
-            const token = localStorage.getItem('authToken');
-            if (token) {
-                window.location.href = 'main.html';
-                return;
-            }
+           
 
             const textFields = document.querySelectorAll('.text-field');
             const phoneInput = document.getElementById('passwordInput');
