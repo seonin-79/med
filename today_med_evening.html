@@ -68,7 +68,9 @@
 
             completeButton.addEventListener('click', function(e) {
                 e.preventDefault();
-                
+                if (window.AndroidBridge && AndroidBridge.markDinnerDone) {
+                    AndroidBridge.markDinnerDone();
+                }
                 // 토스트 메시지 표시
                 toastMessage.classList.add('show');
                 
