@@ -68,7 +68,10 @@
 
             completeButton.addEventListener('click', function(e) {
                 e.preventDefault();
-                
+                 // ✅ (추가) 점심 복약 완료를 Android 앱에 저장 + 30초 체크 취소
+                if (window.AndroidBridge && typeof AndroidBridge.markLunchDone === "function") {
+                    AndroidBridge.markLunchDone();
+                }
                 // 토스트 메시지 표시
                 toastMessage.classList.add('show');
                 
