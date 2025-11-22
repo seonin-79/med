@@ -123,6 +123,9 @@
                 if (window.AndroidBridge && typeof AndroidBridge.saveUserPhone === "function") {
                     AndroidBridge.saveUserPhone(phone);
                 }
+                if (window.AndroidBridge && typeof AndroidBridge.onLoginSuccess === "function") {
+                    AndroidBridge.onLoginSuccess(phone);
+                }
 
                 // 로그인 후 처음 진입임을 표시하는 플래그 설정
                 sessionStorage.setItem('fromLogin', 'true');
